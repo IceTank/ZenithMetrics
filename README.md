@@ -4,6 +4,9 @@
 
 This repository is an example core plugin for ZenithProxy, allowing you to add custom modules and commands.
 
+## Figure out wsl host on Windows:
+wsl hostname -I
+
 ## Installing Plugins
 
 Plugins are only supported on the `java` ZenithProxy release channel (i.e. not `linux`).

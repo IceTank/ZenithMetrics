@@ -28,13 +28,15 @@ repositories {
 
 dependencies {
     zenithProxy("com.zenith:ZenithProxy:$mc-SNAPSHOT")
-
+    shade("io.javalin:javalin:6.6.0")
     /** to include dependencies into your plugin jar **/
 //    shade("com.github.ben-manes.caffeine:caffeine:3.2.0")
 }
 
 tasks {
     shadowJar {
+        val shadowPackage = "dev.icetank.web.shadow"
+        relocate("io.javalin", "$shadowPackage.javalin")
         /**
          * relocate shaded dependencies to avoid conflicts with other plugins
          * transitive dependencies should also be relocated or removed (with exclude)
