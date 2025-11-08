@@ -42,12 +42,12 @@ public class MetricsModuleCommand extends Command {
                                     .title("Metrics Module " + toggleStrCaps(MetricsPlugin.PLUGIN_CONFIG.enabled));
                         }))
                 .then(literal("serviceDiscovery")
-                        .then(literal("serviceId")
-                                .then(argument("serviceId", string()).executes(c -> {
-                                    String serviceId = getString(c, "serviceId");
-                                    MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.serviceId = serviceId;
+                        .then(literal("accountName")
+                                .then(argument("accountName", string()).executes(c -> {
+                                    String accountName = getString(c, "accountName");
+                                    MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.accountName = accountName;
                                     c.getSource().getEmbed()
-                                            .title("Metrics Service ID set to " + serviceId);
+                                            .title("Metrics Service ID set to " + accountName);
                                 })))
                         .then(literal("host")
                                 .then(argument("host", string()).executes(c -> {

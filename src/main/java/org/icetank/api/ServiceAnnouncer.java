@@ -79,7 +79,7 @@ public class ServiceAnnouncer {
                 MetricsPlugin.LOG.warn("Failed to send heartbeat for serviceName {}: received status code {}", info.id(), statusCode);
             }
         } catch (IOException | InterruptedException e) {
-            MetricsPlugin.LOG.warn("Exception while sending heartbeat for serviceName {}: {}", info.id(), e.getMessage());
+            MetricsPlugin.LOG.warn("Exception while sending heartbeat for serviceName {}", info.id(), e);
         }
     }
 

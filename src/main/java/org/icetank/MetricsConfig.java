@@ -17,8 +17,7 @@ public class MetricsConfig {
 
     public ServiceDiscovery serviceDiscovery = new ServiceDiscovery();
     public static class ServiceDiscovery {
-        public String serviceId = "";
-        public String serviceName = "zenith-proxy";
+        public String accountName = "";
         public String host = "http://localhost";
         public int port = 9092;
         public String targetHost = "localhost";

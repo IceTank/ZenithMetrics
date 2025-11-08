@@ -17,7 +17,7 @@ public class PlayerInfo implements Registerable {
     @Override
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
-                .name("player")
+                .name("zenith_player")
                 .help("Current status")
                 .labelNames("type")
                 .callback(callback -> {

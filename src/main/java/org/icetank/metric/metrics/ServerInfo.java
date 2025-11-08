@@ -16,14 +16,14 @@ public class ServerInfo implements Registerable {
     @Override
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
-                .name("server_tps")
+                .name("zenith_server_tps")
                 .help("Current region TPS")
                 .callback(callback -> {
                     callback.call(TPS.getTPSValue());
                 })
                 .register(registry);
         GaugeWithCallback.builder()
-                .name("server_player_count")
+                .name("zenith_server_player_count")
                 .help("Current number of connected players")
                 .callback(callback -> {
                     callback.call(CACHE.getTabListCache().getEntries().size());

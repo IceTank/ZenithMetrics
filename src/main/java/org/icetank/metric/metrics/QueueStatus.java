@@ -17,17 +17,17 @@ public class QueueStatus implements Registerable {
     @Override
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
-                .name("queue_position")
+                .name("zenith_queue_position")
                 .help("Current position in queue")
                 .callback(callback -> callback.call(Proxy.getInstance().getQueuePosition()))
                 .register(registry);
         GaugeWithCallback.builder()
-                .name("queue_status")
+                .name("zenith_queue_status")
                 .help("Current queue status (1 = in queue, 0 = not in queue)")
                 .callback(callback -> callback.call(Proxy.getInstance().isInQueue() ? 1 : 0))
                 .register(registry);
         GaugeWithCallback.builder()
-                .name("online_duration")
+                .name("zenith_online_duration")
                 .help("Duration of current online session in seconds")
                 .callback(callback -> {
                     if (Proxy.getInstance().isConnected()) {

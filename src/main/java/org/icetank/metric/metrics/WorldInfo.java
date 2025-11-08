@@ -19,7 +19,7 @@ public class WorldInfo implements Registerable {
     @Override
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
-                .name("world_entity_count")
+                .name("zenith_world_entity_count")
                 .help("Number of items dropped in the world")
                 .labelNames("type")
                 .callback(callback -> {

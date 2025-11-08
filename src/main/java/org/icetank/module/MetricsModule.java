@@ -14,7 +14,7 @@ public class MetricsModule extends Module {
     HTTPServer server = null;
     ServiceAnnouncer announcer = new ServiceAnnouncer();
     private ScheduledExecutorService scheduler = null;
-    private final long METRICS_INTERVAL_SECONDS = 30;
+    private final long METRICS_INTERVAL_SECONDS = 10;
 
     @Override
     public boolean enabledSetting() {
@@ -35,13 +35,12 @@ public class MetricsModule extends Module {
                     .port(0)
                     .buildAndStart();
 
-            String serviceId = MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.serviceId;
-            String serviceName = MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.serviceName;
-            String host = MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.host;
-            int port = MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port;
+            String accountName = MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.accountName;
+            String serviceName = "zenith-proxy-" + accountName;
             Map<String, String> labels = MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.labels;
+            labels.put("accountName", accountName);
 
-            if (serviceId.isEmpty()) {
+            if (accountName.isEmpty()) {
                 MetricsPlugin.LOG.error("Service ID is empty, configure with zenith instance name");
                 throw new RuntimeException("Service ID is empty");
             }
@@ -51,10 +50,11 @@ public class MetricsModule extends Module {
             }
             String target = MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.targetHost + ":" + server.getPort();
 
-            ServiceAnnouncer.ServiceInfo info = new ServiceAnnouncer.ServiceInfo(serviceId, serviceName, target, labels, 60);
+            ServiceAnnouncer.ServiceInfo info = new ServiceAnnouncer.ServiceInfo(accountName, serviceName, target, labels, 60);
             CompletableFuture.runAsync(() -> {
                 try {
-                    announcer.registerService(host, port, info);
+                    announcer.registerService(MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.host,
+                            MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port, info);
                 } catch (Exception ex) {
                     MetricsPlugin.LOG.error("Failed to register serviceName. Disabling.", ex);
                     disable();
@@ -65,9 +65,10 @@ public class MetricsModule extends Module {
                 }
                 scheduler.scheduleAtFixedRate(() -> {
                     try {
-                        announcer.sendHeartbeat(host, port, info);
+                        announcer.sendHeartbeat(MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.host,
+                                MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port, info);
                     } catch (Exception ex) {
-                        MetricsPlugin.LOG.error("Failed to send heartbeat for serviceName {}: {}", serviceId, ex.getMessage());
+                        MetricsPlugin.LOG.error("Failed to send heartbeat for serviceName {}: {}", accountName, ex.getMessage());
                     }
                 }, METRICS_INTERVAL_SECONDS, METRICS_INTERVAL_SECONDS, TimeUnit.SECONDS);
             });
