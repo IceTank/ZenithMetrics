@@ -1,18 +1,19 @@
-package org.example;
+package org.icetank;
 
 import com.zenith.plugin.api.Plugin;
 import com.zenith.plugin.api.PluginAPI;
 import com.zenith.plugin.api.ZenithProxyPlugin;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import org.example.command.MetricsModuleCommand;
-import org.example.module.MetricsModule;
+import org.example.BuildConstants;
+import org.icetank.command.MetricsModuleCommand;
+import org.icetank.module.MetricsModule;
 
 @Plugin(
     id = "metrics-plugin",
     version = BuildConstants.VERSION,
-    description = "ZenithProxy Example Plugin",
+    description = "ZenithProxy Prometheus Metrics publishing plugin",
     url = "https://github.com/rfresh2/ZenithProxyExamplePlugin",
-    authors = {"rfresh2"},
+    authors = {"IceTank"},
     mcVersions = {"1.21.4"} // to indicate any MC version: @Plugin(mcVersions = "*")
                             // if you touch packet classes, you almost certainly need to pin to a single mc version
 )

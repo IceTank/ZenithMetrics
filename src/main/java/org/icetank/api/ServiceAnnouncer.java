@@ -1,7 +1,7 @@
-package org.example.api;
+package org.icetank.api;
 
 import com.google.gson.Gson;
-import org.example.MetricsPlugin;
+import org.icetank.MetricsPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -59,7 +59,7 @@ public class ServiceAnnouncer {
 
     public void sendHeartbeat(String host, int port, ServiceInfo info) {
         try (HttpClient client = HttpClient.newHttpClient()) {
-            URI url = URI.create(host + ":" + port + "/heartbeat");
+            URI url = URI.create("http://" + host + ":" + port + "/heartbeat");
 
             String heartbeatJson = String.format("{\"id\":\"%s\"}", info.id());
 

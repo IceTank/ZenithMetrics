@@ -28,9 +28,11 @@ repositories {
 
 dependencies {
     zenithProxy("com.zenith:ZenithProxy:$mc-SNAPSHOT")
-    shade("io.javalin:javalin:6.6.0")
     /** to include dependencies into your plugin jar **/
 //    shade("com.github.ben-manes.caffeine:caffeine:3.2.0")
+    shade("io.prometheus:prometheus-metrics-core:1.4.2")
+    shade("io.prometheus:prometheus-metrics-instrumentation-jvm:1.4.2")
+    shade("io.prometheus:prometheus-metrics-exporter-httpserver:1.4.2")
 }
 
 tasks {

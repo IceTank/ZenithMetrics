@@ -1,4 +1,4 @@
-package org.example;
+package org.icetank;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,13 +13,7 @@ import java.util.Map;
  * Fields to static inner classes generate nested JSON objects.
  */
 public class MetricsConfig {
-    public boolean publishMetrics = true;
-
-    public MetricsServer metricsServer = new MetricsServer();
-    public static class MetricsServer {
-        public String host = "0.0.0.0";
-        public int port = 0;
-    }
+    public boolean enabled = true;
 
     public ServiceDiscovery serviceDiscovery = new ServiceDiscovery();
     public static class ServiceDiscovery {

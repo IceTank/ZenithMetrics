@@ -1,12 +1,12 @@
-package org.example.command;
+package org.icetank.command;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.zenith.command.api.Command;
 import com.zenith.command.api.CommandCategory;
 import com.zenith.command.api.CommandContext;
 import com.zenith.command.api.CommandUsage;
-import org.example.MetricsPlugin;
-import org.example.module.MetricsModule;
+import org.icetank.MetricsPlugin;
+import org.icetank.module.MetricsModule;
 
 import static com.mojang.brigadier.arguments.StringArgumentType.getString;
 import static com.mojang.brigadier.arguments.StringArgumentType.string;
@@ -21,10 +21,11 @@ public class MetricsModuleCommand extends Command {
                 .name("metrics")
                 .category(CommandCategory.MODULE)
                 .description("Metrics module commands")
-                .usageLines("/metrics - Metrics module commands")
-                .usageLines("/metrics [on/off] - Toggle metrics publishing")
-                .usageLines("serviceDiscovery serviceId <serviceId> - Set the service ID for metrics service discovery")
-                .usageLines("serviceDiscovery port <port> - Set the port for metrics service discovery")
+                .usageLines("Metrics module commands",
+                        "[on/off] - Toggle metrics publishing",
+                        "serviceDiscovery serviceId <serviceId> - Set the service ID for metrics service discovery",
+                        "serviceDiscovery host <host> - Set the host for metrics service discovery",
+                        "serviceDiscovery port <port> - Set the port for metrics service discovery")
                 .build();
     }
 
@@ -33,12 +34,12 @@ public class MetricsModuleCommand extends Command {
         return command("metrics")
                 .then(argument("toggle", toggle())
                         .executes(c -> {
-                            MetricsPlugin.PLUGIN_CONFIG.publishMetrics = getToggle(c, "toggle");
+                            MetricsPlugin.PLUGIN_CONFIG.enabled = getToggle(c, "toggle");
                             MODULE.get(MetricsModule.class).syncEnabledFromConfig();
                             c.getSource().getEmbed()
                                     // if no title is set, no embed response will be sent
                                     // other properties like fields can be left unset without issues
-                                    .title("Metrics Module " + toggleStrCaps(MetricsPlugin.PLUGIN_CONFIG.publishMetrics));
+                                    .title("Metrics Module " + toggleStrCaps(MetricsPlugin.PLUGIN_CONFIG.enabled));
                         }))
                 .then(literal("serviceDiscovery")
                         .then(literal("serviceId")
@@ -47,6 +48,13 @@ public class MetricsModuleCommand extends Command {
                                     MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.serviceId = serviceId;
                                     c.getSource().getEmbed()
                                             .title("Metrics Service ID set to " + serviceId);
+                                })))
+                        .then(literal("host")
+                                .then(argument("host", string()).executes(c -> {
+                                    String host = getString(c, "host");
+                                    MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.host = host;
+                                    c.getSource().getEmbed()
+                                            .title("Metrics Service Host set to " + host);
                                 })))
                         .then(literal("port")
                                 .then(argument("port", string()).executes(c -> {
