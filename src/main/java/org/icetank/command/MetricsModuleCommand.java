@@ -22,16 +22,21 @@ public class MetricsModuleCommand extends Command {
                 .category(CommandCategory.MODULE)
                 .description("Metrics module commands")
                 .usageLines("Metrics module commands",
-                        "[on/off] - Toggle metrics publishing",
-                        "serviceDiscovery serviceId <serviceId> - Set the service ID for metrics service discovery",
-                        "serviceDiscovery host <host> - Set the host for metrics service discovery",
-                        "serviceDiscovery port <port> - Set the port for metrics service discovery")
+                        "[on/off] - Toggle metrics publishing.",
+                        "serviceDiscovery accountName <accountName> - Set the service account name used for metrics service discovery.",
+                        "serviceDiscovery host <host> - Service discovery host.",
+                        "serviceDiscovery port <port> - Service discovery port.",
+                        "serviceDiscovery target <target> - Set the target host that Prometheus should scrape.")
                 .build();
     }
 
     @Override
     public LiteralArgumentBuilder<CommandContext> register() {
         return command("metrics")
+                .executes(c -> {
+                    c.getSource().getEmbed()
+                            .title("Metrics module is " + toggleStrCaps(MetricsPlugin.PLUGIN_CONFIG.enabled));
+                })
                 .then(argument("toggle", toggle())
                         .executes(c -> {
                             MetricsPlugin.PLUGIN_CONFIG.enabled = getToggle(c, "toggle");
@@ -39,24 +44,47 @@ public class MetricsModuleCommand extends Command {
                             c.getSource().getEmbed()
                                     // if no title is set, no embed response will be sent
                                     // other properties like fields can be left unset without issues
-                                    .title("Metrics Module " + toggleStrCaps(MetricsPlugin.PLUGIN_CONFIG.enabled));
+                                    .title("Metrics module " + toggleStrCaps(MetricsPlugin.PLUGIN_CONFIG.enabled));
                         }))
                 .then(literal("serviceDiscovery")
+                        .executes(c -> {
+                            c.getSource().getEmbed()
+                                    .title("Service discovery configuration")
+                                    .addField("Account Name", MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.accountName)
+                                    .addField("Host", MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.host)
+                                    .addField("Port", String.valueOf(MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port))
+                                    .addField("Target Host", MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.targetHost);
+                        })
                         .then(literal("accountName")
+                                .executes(c -> {
+                                    c.getSource().getEmbed()
+                                            .title("Current metrics account name: " +
+                                                    MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.accountName);
+                                })
                                 .then(argument("accountName", string()).executes(c -> {
                                     String accountName = getString(c, "accountName");
                                     MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.accountName = accountName;
                                     c.getSource().getEmbed()
-                                            .title("Metrics Service ID set to " + accountName);
+                                            .title("Metrics account name set to: " + accountName);
                                 })))
                         .then(literal("host")
+                                .executes(c -> {
+                                    c.getSource().getEmbed()
+                                            .title("Current service discovery host: " +
+                                                    MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.host);
+                                })
                                 .then(argument("host", string()).executes(c -> {
                                     String host = getString(c, "host");
                                     MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.host = host;
                                     c.getSource().getEmbed()
-                                            .title("Metrics Service Host set to " + host);
+                                            .title("Service discovery host set to: " + host);
                                 })))
                         .then(literal("port")
+                                .executes(c -> {
+                                    c.getSource().getEmbed()
+                                            .title("Current service discovery port: " +
+                                                    MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port);
+                                })
                                 .then(argument("port", string()).executes(c -> {
                                     String portStr = getString(c, "port");
                                     int port;
@@ -69,15 +97,20 @@ public class MetricsModuleCommand extends Command {
                                     }
                                     MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port = port;
                                     c.getSource().getEmbed()
-                                            .title("Metrics Service Port set to " + port);
+                                            .title("Service discovery port set to: " + port);
                                 }))
                         )
                         .then(literal("target")
+                                .executes(c -> {
+                                    c.getSource().getEmbed()
+                                            .title("Current metrics scrape target host: " +
+                                                    MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.targetHost);
+                                })
                                 .then(argument("target", string()).executes(c -> {
                                     String target = getString(c, "target");
                                     MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.targetHost = target;
                                     c.getSource().getEmbed()
-                                            .title("Metrics Service Host set to " + target);
+                                            .title("Metrics scrape target host set to: " + target);
                                 }))
                         )
                 );

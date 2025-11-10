@@ -2,7 +2,20 @@
 
 [ZenithProxy](https://github.com/rfresh2/ZenithProxy) is a Minecraft proxy and bot.
 
-This repository is an example core plugin for ZenithProxy, allowing you to add custom modules and commands.
+This ZenithProxy Core Plugin provides ZenithProxy Metrics that can be scraped by Prometheus.
+This plugin uses the [Prometheus Java Client](https://prometheus.github.io/client_java/) to create the `/metrics` endpoint.
+Metrics include 2b2t related Zenith Proxy information and the JVM metrics provided by the 
+[Prometheus Java Client JVM module](https://prometheus.github.io/client_java/instrumentation/jvm/).
+
+# Configuration
+## Commands
+
+* `/metrics <on|off>` - Enable or disable sending anonymous usage metrics.
+* `/metrics serviceDiscovery` - View the current service discovery configuration.
+* `/metrics serviceDiscovery accountName [name]` - Set or view the metrics account name.
+* `/metrics serviceDiscovery host [host]` - Set or view the service discovery host.
+* `/metrics serviceDiscovery port [port]` - Set or view the service discovery port.
+* `/metrics serviceDiscovery target [target host]` - Set or view the scrape target host for Prometheus to scrape.
 
 ## Figure out wsl host on Windows:
 wsl hostname -I
