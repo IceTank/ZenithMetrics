@@ -1,8 +1,14 @@
 name: Publish Plugin
 
+permissions:
+  contents: write
+  pull-requests: write
+
 on:
   workflow_dispatch:
-
+  push:
+    tags:
+      - 'v*'
 jobs:
   build:
     runs-on: ubuntu-latest
