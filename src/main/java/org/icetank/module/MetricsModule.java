@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 
+import static org.icetank.MetricsPlugin.LOG;
+
 public class MetricsModule extends Module {
     HTTPServer server = null;
     ServiceAnnouncer announcer = new ServiceAnnouncer();
@@ -29,7 +31,7 @@ public class MetricsModule extends Module {
 
         try {
             if (server != null) {
-                MetricsPlugin.LOG.warn("Metrics server is already running.");
+                LOG.warn("Metrics server is already running.");
                 return;
             }
             server = HTTPServer.builder()
@@ -42,11 +44,11 @@ public class MetricsModule extends Module {
             labels.put("accountName", accountName);
 
             if (accountName.isEmpty()) {
-                MetricsPlugin.LOG.error("Service ID is empty, configure with zenith instance name");
+                LOG.error("Service ID is empty, configure with zenith instance name");
                 throw new RuntimeException("Service ID is empty");
             }
             if (server.getPort() <= 0) {
-                MetricsPlugin.LOG.error("Metrics server failed to start, cannot announce serviceName");
+                LOG.error("Metrics server failed to start, cannot announce serviceName");
                 throw new RuntimeException("Metrics server failed to start");
             }
             String target = MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.targetHost + ":" + server.getPort();
@@ -57,7 +59,7 @@ public class MetricsModule extends Module {
                     announcer.registerService(MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.host,
                             MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port, info);
                 } catch (Exception ex) {
-                    MetricsPlugin.LOG.error("Failed to register serviceName. Disabling.", ex);
+                    LOG.error("Failed to register serviceName. Disabling.", ex);
                     disable();
                     return;
                 }
@@ -69,13 +71,13 @@ public class MetricsModule extends Module {
                         announcer.sendHeartbeat(MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.host,
                                 MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port, info);
                     } catch (Exception ex) {
-                        MetricsPlugin.LOG.error("Failed to send heartbeat for serviceName {}: {}", accountName, ex.getMessage());
+                        LOG.error("Failed to send heartbeat for serviceName {}: {}", accountName, ex.getMessage());
                     }
                 }, METRICS_INTERVAL_SECONDS, METRICS_INTERVAL_SECONDS, TimeUnit.SECONDS);
             });
         } catch (Exception e) {
-            shutdown();
-            throw new RuntimeException(e);
+            disable();
+            LOG.error("Failed to start MetricsModule, disabling module.", e);
         }
     }
 
