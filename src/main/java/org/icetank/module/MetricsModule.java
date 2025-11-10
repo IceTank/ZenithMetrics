@@ -7,6 +7,7 @@ import org.icetank.MetricsPlugin;
 import org.icetank.api.ServiceAnnouncer;
 import org.icetank.metric.Metrics;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -37,7 +38,7 @@ public class MetricsModule extends Module {
 
             String accountName = MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.accountName;
             String serviceName = "zenith-proxy-" + accountName;
-            Map<String, String> labels = MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.labels;
+            Map<String, String> labels = new HashMap<>(MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.labels);
             labels.put("accountName", accountName);
 
             if (accountName.isEmpty()) {
