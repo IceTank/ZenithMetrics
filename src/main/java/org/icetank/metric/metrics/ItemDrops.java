@@ -60,10 +60,13 @@ public class ItemDrops implements Registerable {
     public static void addItemCreated(int entityId, String itemName, int stackCount) {
         if (!uniqueItemIds.contains(entityId)) {
             uniqueItemIds.add(entityId);
-            itemCounter.labelValues(itemName).inc(stackCount);
             while (uniqueItemIds.size() > 1000) {
                 uniqueItemIds.removeFirst();
             }
+            if (itemCounter == null) {
+                return;
+            }
+            itemCounter.labelValues(itemName).inc(stackCount);
         }
     }
 }
