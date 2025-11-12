@@ -23,7 +23,7 @@ public class ItemDrops implements Registerable {
     @Override
     public void register(PrometheusRegistry registry) {
         itemCounter = Gauge.builder()
-                .name("zenith_total_items_created")
+                .name("zenith_total_items_dropped")
                 .labelNames("item")
                 .register(registry);
         GaugeWithCallback.builder()
