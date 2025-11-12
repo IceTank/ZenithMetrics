@@ -1,10 +1,7 @@
 package org.icetank.metric;
 
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
-import org.icetank.metric.metrics.PlayerInfo;
-import org.icetank.metric.metrics.WorldInfo;
-import org.icetank.metric.metrics.QueueStatus;
-import org.icetank.metric.metrics.ServerInfo;
+import org.icetank.metric.metrics.*;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,6 +30,7 @@ public class Metrics {
             new ServerInfo().register(registry);
             new WorldInfo().register(registry);
             new PlayerInfo().register(registry);
+            new ItemDrops().register(registry);
         }
     }
 }
