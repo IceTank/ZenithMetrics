@@ -12,7 +12,7 @@ import org.icetank.module.MetricsModule;
     id = "metrics-plugin",
     version = BuildConstants.VERSION,
     description = "ZenithProxy Prometheus Metrics publishing plugin",
-    url = "https://github.com/rfresh2/ZenithProxyExamplePlugin",
+    url = "https://github.com/IceTank/ZenithMetrics",
     authors = {"IceTank"},
     mcVersions = {"1.21.4"} // to indicate any MC version: @Plugin(mcVersions = "*")
                             // if you touch packet classes, you almost certainly need to pin to a single mc version
