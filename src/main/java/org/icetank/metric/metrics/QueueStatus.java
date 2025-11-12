@@ -19,7 +19,13 @@ public class QueueStatus implements Registerable {
         GaugeWithCallback.builder()
                 .name("zenith_queue_position")
                 .help("Current position in queue")
-                .callback(callback -> callback.call(Proxy.getInstance().getQueuePosition()))
+                .callback(callback -> {
+                    if (Proxy.getInstance().getQueuePosition() > 10000 || !Proxy.getInstance().isInQueue()) {
+                        callback.call(0);
+                    } else {
+                        callback.call(Proxy.getInstance().getQueuePosition());
+                    }
+                })
                 .register(registry);
         GaugeWithCallback.builder()
                 .name("zenith_queue_status")
@@ -27,7 +33,7 @@ public class QueueStatus implements Registerable {
                 .callback(callback -> callback.call(Proxy.getInstance().isInQueue() ? 1 : 0))
                 .register(registry);
         GaugeWithCallback.builder()
-                .name("zenith_online_duration")
+                .name("zenith_total_online_duration")
                 .help("Duration of current online session in seconds")
                 .callback(callback -> {
                     if (Proxy.getInstance().isConnected()) {

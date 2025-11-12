@@ -12,39 +12,14 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
 
-/**
- * Service announcer for serviceName discovery.
- *
- *
- POST http://localhost:9090/register HTTP/1.1
- Content-Type: application/json
-
- {
- "serviceId":"zenith-icetank",
- "serviceName":"zenith-proxy",
- "target":"10.0.1.7:12345",
- "labels":{"env":"prod","__metrics_path__":"/actuator/prometheus"},
- "ttl_seconds":60
- }
-
- ###
-
- POST http://localhost:9090/heartbeat HTTP/1.1
- Content-Type: application/json
-
- {
- "serviceId": "zenith-icetank",
- "serviceName": "zenith-proxy"
- }
- */
-
 public class ServiceAnnouncer {
-    private final HttpClient client = HttpClient.newHttpClient();
-    public void registerService(String host, int port, ServiceInfo serviceInfo) throws IOException, InterruptedException {
+    private static final HttpClient client = HttpClient.newHttpClient();
+
+    public static void registerService(String host, int port, ServiceInfo serviceInfo) throws IOException, InterruptedException {
         URI url = buildUri(host, port, "/register");
 
-        MetricsPlugin.LOG.info("Registering metrics serviceName at " + url);
-        MetricsPlugin.LOG.info("Metric Service info:\n" + serviceInfo.toString());
+        MetricsPlugin.LOG.info("Registering metrics serviceName at {}", url);
+        MetricsPlugin.LOG.info("Metric Service info:\n{}", serviceInfo.toString());
 
         HttpRequest req = HttpRequest.newBuilder(url)
                 .header("Content-Type", "application/json")
@@ -57,7 +32,7 @@ public class ServiceAnnouncer {
         }
     }
 
-    public void sendHeartbeat(String host, int port, ServiceInfo info) {
+    public static void sendHeartbeat(String host, int port, ServiceInfo info) {
         try (HttpClient client = HttpClient.newHttpClient()) {
             URI url = URI.create("http://" + host + ":" + port + "/heartbeat");
 
@@ -72,7 +47,7 @@ public class ServiceAnnouncer {
             int statusCode = response.statusCode();
             if (statusCode == HttpURLConnection.HTTP_NOT_FOUND) {
                 MetricsPlugin.LOG.warn("Service not found for heartbeat, re-registering serviceName {}", info.id());
-                this.registerService(host, port, info);
+                registerService(host, port, info);
                 return;
             }
             if (statusCode != HttpURLConnection.HTTP_OK && statusCode != HttpURLConnection.HTTP_NO_CONTENT) {

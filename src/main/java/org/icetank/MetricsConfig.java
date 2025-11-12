@@ -15,10 +15,13 @@ import java.util.Map;
 public class MetricsConfig {
     public boolean enabled = true;
 
+    public int port = 9411; // Change to 0 to randomly assign port
+
     public ServiceDiscovery serviceDiscovery = new ServiceDiscovery();
     public static class ServiceDiscovery {
+        public boolean enabled = false;
         public String accountName = "";
-        public String host = "http://localhost";
+        public String host = "localhost";
         public int port = 9092;
         public String targetHost = "localhost";
         public Map<String, String> labels = new HashMap<>();

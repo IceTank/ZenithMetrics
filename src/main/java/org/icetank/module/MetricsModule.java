@@ -1,6 +1,5 @@
 package org.icetank.module;
 
-import com.zenith.cache.data.entity.EntityStandard;
 import com.zenith.mc.item.ItemData;
 import com.zenith.mc.item.ItemRegistry;
 import com.zenith.module.api.Module;
@@ -11,12 +10,9 @@ import com.zenith.network.codec.PacketHandlerStateCodec;
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 import io.prometheus.metrics.instrumentation.jvm.JvmMetrics;
 import org.geysermc.mcprotocollib.protocol.data.ProtocolState;
-import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.MetadataTypes;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundRemoveEntitiesPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
 import org.icetank.api.ServiceAnnouncer;
 import org.icetank.metric.Metrics;
 import org.icetank.metric.metrics.ItemDrops;
@@ -34,10 +30,9 @@ import static org.icetank.MetricsPlugin.LOG;
 import static org.icetank.MetricsPlugin.PLUGIN_CONFIG;
 
 public class MetricsModule extends Module {
-    HTTPServer server = null;
-    ServiceAnnouncer announcer = new ServiceAnnouncer();
+    HTTPServer metricsServer = null;
     private ScheduledExecutorService scheduler = null;
-    private final long METRICS_INTERVAL_SECONDS = 10;
+    private final long SERVICE_HEARTBEAT_INTERVAL = 10;
 
     @Override
     public boolean enabledSetting() {
@@ -50,14 +45,20 @@ public class MetricsModule extends Module {
         Metrics.builder().register();
 
         try {
-            if (server != null) {
-                LOG.warn("Metrics server is already running.");
+            if (metricsServer != null) {
+                LOG.warn("Metrics server is already running. (??????)");
                 return;
             }
-            server = HTTPServer.builder()
-                    .port(0)
+            int port = PLUGIN_CONFIG.port;
+            metricsServer = HTTPServer.builder()
+                    .port(port)
                     .buildAndStart();
 
+            if (!PLUGIN_CONFIG.serviceDiscovery.enabled) {
+                return;
+            }
+
+            // Start service discovery registration
             String accountName = PLUGIN_CONFIG.serviceDiscovery.accountName;
             String serviceName = "zenith-proxy-" + accountName;
             Map<String, String> labels = new HashMap<>(PLUGIN_CONFIG.serviceDiscovery.labels);
@@ -68,16 +69,16 @@ public class MetricsModule extends Module {
                 LOG.error("Service ID is empty, configure with zenith instance name");
                 throw new RuntimeException("Service ID is empty");
             }
-            if (server.getPort() <= 0) {
+            if (metricsServer.getPort() <= 0) {
                 LOG.error("Metrics server failed to start, cannot announce serviceName");
                 throw new RuntimeException("Metrics server failed to start");
             }
-            String target = PLUGIN_CONFIG.serviceDiscovery.targetHost + ":" + server.getPort();
+            String target = PLUGIN_CONFIG.serviceDiscovery.targetHost + ":" + metricsServer.getPort();
 
             ServiceAnnouncer.ServiceInfo info = new ServiceAnnouncer.ServiceInfo(accountName, serviceName, target, labels, 60);
             CompletableFuture.runAsync(() -> {
                 try {
-                    announcer.registerService(PLUGIN_CONFIG.serviceDiscovery.host,
+                    ServiceAnnouncer.registerService(PLUGIN_CONFIG.serviceDiscovery.host,
                             PLUGIN_CONFIG.serviceDiscovery.port, info);
                 } catch (Exception ex) {
                     LOG.error("Failed to register serviceName. Disabling.", ex);
@@ -89,12 +90,12 @@ public class MetricsModule extends Module {
                 }
                 scheduler.scheduleAtFixedRate(() -> {
                     try {
-                        announcer.sendHeartbeat(PLUGIN_CONFIG.serviceDiscovery.host,
+                        ServiceAnnouncer.sendHeartbeat(PLUGIN_CONFIG.serviceDiscovery.host,
                                 PLUGIN_CONFIG.serviceDiscovery.port, info);
                     } catch (Exception ex) {
                         LOG.error("Failed to send heartbeat for serviceName {}: {}", accountName, ex.getMessage());
                     }
-                }, METRICS_INTERVAL_SECONDS, METRICS_INTERVAL_SECONDS, TimeUnit.SECONDS);
+                }, SERVICE_HEARTBEAT_INTERVAL, SERVICE_HEARTBEAT_INTERVAL, TimeUnit.SECONDS);
             });
         } catch (Exception e) {
             disable();
@@ -105,11 +106,9 @@ public class MetricsModule extends Module {
     @Override
     public @Nullable PacketHandlerCodec registerClientPacketHandlerCodec() {
         return PacketHandlerCodec.clientBuilder()
-                .setPriority(5) // Before zenith Modules
+                .setPriority(5) // Does not really matter when we run as we only listen for entity creation events.
                 .setId("matrics_packet_listener")
                 .state(ProtocolState.GAME, PacketHandlerStateCodec.clientBuilder()
-                        //.inbound(ClientboundAddEntityPacket.class, new ClientboundAddEntityPacketHandler())
-                        //.inbound(ClientboundRemoveEntitiesPacket.class, new ClientboundRemoveEntityPacket())
                         .inbound(ClientboundSetEntityDataPacket.class, new ClientboundEntityMetadataPacketHandler())
                         .build())
                 .build();
@@ -121,9 +120,9 @@ public class MetricsModule extends Module {
     }
 
     private void shutdown() {
-        if (server != null) {
-            server.stop();
-            server = null;
+        if (metricsServer != null) {
+            metricsServer.stop();
+            metricsServer = null;
         }
         if (scheduler != null) {
             scheduler.shutdownNow();
@@ -131,30 +130,13 @@ public class MetricsModule extends Module {
         }
     }
 
-    private static class ClientboundAddEntityPacketHandler implements ClientEventLoopPacketHandler<ClientboundAddEntityPacket, ClientSession> {
-        @Override
-        public boolean applyAsync(ClientboundAddEntityPacket packet, ClientSession session) {
-            var entity = CACHE.getEntityCache().get(packet.getEntityId());
-            if (packet.getType() == EntityType.ITEM && entity instanceof EntityStandard) {
-                var itemStack = entity.getMetadataValue(8, MetadataTypes.ITEM, ItemStack.class);
-                if (itemStack != null) {
-                    var itemData = ItemRegistry.REGISTRY.get(itemStack.getId());
-                    if (itemData != null) {
-                        ItemDrops.itemCounter.labelValues(itemData.name(), ItemDrops.STATUS_CREATED).inc(itemStack.getAmount());
-                    }
-                }
-            }
-            return true;
-        }
-    }
-
     private static class ClientboundEntityMetadataPacketHandler implements ClientEventLoopPacketHandler<ClientboundSetEntityDataPacket, ClientSession> {
         /**
-         * When minecraft spawns an item it usually spawns an item entity first and then assigns the itemStack to it with
-         * a EntityData packet. I think.
-         * We have to construct the item stack ourselves because we run before zenith's entity update handler so we can
-         * observe when entities are removed from the cache.
-         * TODO: What happens when item stacks merge?
+         * When minecraft spawns an item it usually spawns an item entity first and then assigns the itemStack to it
+         * with a EntityData packet. I think. Don't quote me on that.
+         * We check if this metadata packet belongs to an item entity, and if so we extract the itemStack from it and
+         * it as a created item.
+         *
          * @param packet The packet
          * @param session The session
          * @return true
@@ -171,25 +153,6 @@ public class MetricsModule extends Module {
                             if (itemData != null) {
                                 ItemDrops.addItemCreated(packet.getEntityId(), itemData.name(), valueCast.getAmount());
                             }
-                        }
-                    }
-                }
-            }
-            return true;
-        }
-    }
-
-    private static class ClientboundRemoveEntityPacket implements ClientEventLoopPacketHandler<ClientboundRemoveEntitiesPacket, ClientSession> {
-        @Override
-        public boolean applyAsync(ClientboundRemoveEntitiesPacket packet, ClientSession session) {
-            for (int entityId : packet.getEntityIds()) {
-                var entity = CACHE.getEntityCache().get(entityId);
-                if (entity instanceof EntityStandard entityStandard && entity.getEntityType() == EntityType.ITEM) {
-                    var itemStack = entityStandard.getMetadataValue(8, MetadataTypes.ITEM, ItemStack.class);
-                    if (itemStack != null) {
-                        var itemData = ItemRegistry.REGISTRY.get(itemStack.getId());
-                        if (itemData != null) {
-                            ItemDrops.itemCounter.labelValues(itemData.name(), ItemDrops.STATUS_DELETED).inc(itemStack.getAmount());
                         }
                     }
                 }

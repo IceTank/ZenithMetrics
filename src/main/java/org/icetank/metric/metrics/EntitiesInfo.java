@@ -15,11 +15,11 @@ import static com.zenith.Globals.CACHE;
  * @author IceTank
  * @since 08.11.2025
  */
-public class WorldInfo implements Registerable {
+public class EntitiesInfo implements Registerable {
     @Override
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
-                .name("zenith_world_entity_count")
+                .name("zenith_total_entities")
                 .help("Number of items dropped in the world")
                 .labelNames("type")
                 .callback(callback -> {

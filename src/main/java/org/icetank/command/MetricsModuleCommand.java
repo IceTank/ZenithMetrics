@@ -23,7 +23,8 @@ public class MetricsModuleCommand extends Command {
                 .description("Metrics module commands")
                 .usageLines("Metrics module commands",
                         "[on/off] - Toggle metrics publishing.",
-                        "serviceDiscovery accountName <accountName> - Set the service account name used for metrics service discovery.",
+                        "serviceDiscovery enabled [on/off] - Enable or disable service discovery for the metrics server.",
+                        "serviceDiscovery accountName <accountName> - Set the account name service discovery metrics label.",
                         "serviceDiscovery host <host> - Service discovery host.",
                         "serviceDiscovery port <port> - Service discovery port.",
                         "serviceDiscovery target <target> - Set the target host that Prometheus should scrape.")
@@ -55,6 +56,17 @@ public class MetricsModuleCommand extends Command {
                                     .addField("Port", String.valueOf(MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port))
                                     .addField("Target Host", MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.targetHost);
                         })
+                        .then(literal("enabled").executes(c -> {
+                                    c.getSource().getEmbed()
+                                            .title("Service discovery is " +
+                                                    toggleStrCaps(MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.enabled));
+                                })
+                                .then(argument("toggle", toggle()).executes(c -> {
+                                    boolean enabled = getToggle(c, "toggle");
+                                    MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.enabled = enabled;
+                                    c.getSource().getEmbed()
+                                            .title("Service discovery " + toggleStrCaps(enabled));
+                                })))
                         .then(literal("accountName")
                                 .executes(c -> {
                                     c.getSource().getEmbed()

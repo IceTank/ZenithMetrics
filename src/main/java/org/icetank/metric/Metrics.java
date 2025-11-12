@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Metrics {
     private static final Set<PrometheusRegistry> REGISTERED = ConcurrentHashMap.newKeySet();
+
     public static Builder builder() {
         return new Builder();
     }
@@ -20,15 +21,12 @@ public class Metrics {
             new Metrics().register(registry);
         }
     }
-    public void register() {
-        register(PrometheusRegistry.defaultRegistry);
-    }
 
-    public void register(PrometheusRegistry registry) {
+    private void register(PrometheusRegistry registry) {
         if (REGISTERED.add(registry)) {
             new QueueStatus().register(registry);
-            new ServerInfo().register(registry);
-            new WorldInfo().register(registry);
+            new GameInfo().register(registry);
+            new EntitiesInfo().register(registry);
             new PlayerInfo().register(registry);
             new ItemDrops().register(registry);
         }

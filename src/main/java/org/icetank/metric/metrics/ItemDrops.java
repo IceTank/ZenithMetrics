@@ -19,14 +19,12 @@ import static com.zenith.Globals.CACHE;
 
 public class ItemDrops implements Registerable {
     public static Gauge itemCounter;
-    public static String STATUS_CREATED = "created";
-    public static String STATUS_DELETED = "deleted";
-    private static List<Integer> uniqueItemIds = new ArrayList<>();
+    private static final List<Integer> uniqueItemIds = new ArrayList<>();
     @Override
     public void register(PrometheusRegistry registry) {
         itemCounter = Gauge.builder()
-                .name("zenith_item_drops_total")
-                .labelNames("item", "status")
+                .name("zenith_total_items_created")
+                .labelNames("item")
                 .register(registry);
         GaugeWithCallback.builder()
                 .name("zenith_total_items")
@@ -52,10 +50,17 @@ public class ItemDrops implements Registerable {
                 .register(registry);
     }
 
-    public static void addItemCreated(int itemId, String itemName, int amount) {
-        if (!uniqueItemIds.contains(itemId)) {
-            uniqueItemIds.add(itemId);
-            itemCounter.labelValues(itemName, STATUS_CREATED).inc(amount);
+    /**
+     * This method adds to the item created counter only if the itemId has not been seen before.
+     * Checking the itemId prevents double counting the same item when item stacks merge or split.
+     * @param entityId The unique entity ID of the item.
+     * @param itemName The name of the item.
+     * @param stackCount The amount to increment the counter by.
+     */
+    public static void addItemCreated(int entityId, String itemName, int stackCount) {
+        if (!uniqueItemIds.contains(entityId)) {
+            uniqueItemIds.add(entityId);
+            itemCounter.labelValues(itemName).inc(stackCount);
             while (uniqueItemIds.size() > 1000) {
                 uniqueItemIds.removeFirst();
             }

@@ -12,7 +12,7 @@ import static com.zenith.Globals.TPS;
  * @author IceTank
  * @since 08.11.2025
  */
-public class ServerInfo implements Registerable {
+public class GameInfo implements Registerable {
     @Override
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
@@ -25,9 +25,7 @@ public class ServerInfo implements Registerable {
         GaugeWithCallback.builder()
                 .name("zenith_server_player_count")
                 .help("Current number of connected players")
-                .callback(callback -> {
-                    callback.call(CACHE.getTabListCache().getEntries().size());
-                })
+                .callback(callback -> callback.call(CACHE.getTabListCache().getEntries().size()))
                 .register(registry);
     }
 }
