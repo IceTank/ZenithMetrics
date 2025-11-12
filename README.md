@@ -35,6 +35,9 @@ You can let ZenithProxy download and install plugins from GitHub releases automa
 2. Copy the URL of the `ZenithMetrics-<version>.jar` asset.
 3. In ZenithProxy, run the command: `plugin download <url>` replacing `<url>` with the copied URL.
 
+ZenithProxy won't automatically replace older versions of the same plugin. You need to manually delete the old plugin jar.
+You can use the `plugin list` command to see which plugins are installed and the `plugin remove <plugin id>` command to remove old plugins.
+
 ## Creating Plugins
 
 Use this repository as a template to create your own plugin repository.
