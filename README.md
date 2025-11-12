@@ -19,9 +19,6 @@ Metrics include 2b2t related Zenith Proxy information and the JVM metrics provid
 * `/metrics serviceDiscovery port [port]` - Set or view the service discovery service port. Default is `9092`.
 * `/metrics serviceDiscovery target [target host]` - Set or view the scrape target host for Prometheus to scrape.
 
-## Figure out wsl host on Windows:
-wsl hostname -I
-
 ## Installing Plugins
 
 Plugins are only supported on the `java` ZenithProxy release channel (i.e. not `linux`).
@@ -29,6 +26,14 @@ Plugins are only supported on the `java` ZenithProxy release channel (i.e. not `
 Place plugin jars in the `plugins` folder inside the same folder as the ZenithProxy launcher.
 
 Restart ZenithProxy to load plugins. Loading plugins after launch or hot reloading is not supported.
+
+### Installing Plugins from Releases
+
+You can let ZenithProxy download and install plugins from GitHub releases automatically.
+
+1. Go to the [Releases Page](https://github.com/IceTank/ZenithMetrics/releases) and click on the latest release.
+2. Copy the URL of the `ZenithMetrics-<version>.jar` asset.
+3. In ZenithProxy, run the command: `plugin download <url>` replacing `<url>` with the copied URL.
 
 ## Creating Plugins
 
