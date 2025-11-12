@@ -44,6 +44,26 @@ public class MetricsModule extends Module {
         JvmMetrics.builder().register();
         Metrics.builder().register();
 
+        startMetricsServer();
+    }
+
+    @Override
+    public @Nullable PacketHandlerCodec registerClientPacketHandlerCodec() {
+        return PacketHandlerCodec.clientBuilder()
+                .setPriority(5) // Does not really matter when we run as we only listen for entity creation events.
+                                .setId("metrics_packet_listener")
+                .state(ProtocolState.GAME, PacketHandlerStateCodec.clientBuilder()
+                        .inbound(ClientboundSetEntityDataPacket.class, new ClientboundEntityMetadataPacketHandler())
+                        .build())
+                .build();
+    }
+
+    @Override
+    public void onDisable() {
+        shutdown();
+    }
+
+    private void startMetricsServer() {
         try {
             if (metricsServer != null) {
                 LOG.warn("Metrics server is already running. (??????)");
@@ -103,22 +123,6 @@ public class MetricsModule extends Module {
         }
     }
 
-    @Override
-    public @Nullable PacketHandlerCodec registerClientPacketHandlerCodec() {
-        return PacketHandlerCodec.clientBuilder()
-                .setPriority(5) // Does not really matter when we run as we only listen for entity creation events.
-                .setId("matrics_packet_listener")
-                .state(ProtocolState.GAME, PacketHandlerStateCodec.clientBuilder()
-                        .inbound(ClientboundSetEntityDataPacket.class, new ClientboundEntityMetadataPacketHandler())
-                        .build())
-                .build();
-    }
-
-    @Override
-    public void onDisable() {
-        shutdown();
-    }
-
     private void shutdown() {
         if (metricsServer != null) {
             metricsServer.stop();
@@ -128,6 +132,11 @@ public class MetricsModule extends Module {
             scheduler.shutdownNow();
             scheduler = null;
         }
+    }
+
+    public void restartMetricsServer() {
+        shutdown();
+        startMetricsServer();
     }
 
     private static class ClientboundEntityMetadataPacketHandler implements ClientEventLoopPacketHandler<ClientboundSetEntityDataPacket, ClientSession> {

@@ -10,11 +10,13 @@ Metrics include 2b2t related Zenith Proxy information and the JVM metrics provid
 # Configuration
 ## Commands
 
-* `/metrics <on|off>` - Enable or disable sending anonymous usage metrics.
+* `/metrics <on|off>` - Enable or disable sending anonymous usage metrics. Default is `on`.
+* `/metrics port [port]` - Set or view the metrics server port. Default is `9411`.
 * `/metrics serviceDiscovery` - View the current service discovery configuration.
-* `/metrics serviceDiscovery accountName [name]` - Set or view the metrics account name.
-* `/metrics serviceDiscovery host [host]` - Set or view the service discovery host.
-* `/metrics serviceDiscovery port [port]` - Set or view the service discovery port.
+* `/metrics serviceDiscovery enable <on|off>` - Enable or disable service discovery for Prometheus. Default is `off`.
+* `/metrics serviceDiscovery accountName [name]` - Set or view the metrics account name. Default is an empty string. Has to be configured for service discovery to work.
+* `/metrics serviceDiscovery host [host]` - Set or view the service discovery service host. Default is `localhost`.
+* `/metrics serviceDiscovery port [port]` - Set or view the service discovery service port. Default is `9092`.
 * `/metrics serviceDiscovery target [target host]` - Set or view the scrape target host for Prometheus to scrape.
 
 ## Figure out wsl host on Windows:

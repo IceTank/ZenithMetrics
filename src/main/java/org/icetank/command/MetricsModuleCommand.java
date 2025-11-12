@@ -8,6 +8,8 @@ import com.zenith.command.api.CommandUsage;
 import org.icetank.MetricsPlugin;
 import org.icetank.module.MetricsModule;
 
+import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
+import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static com.mojang.brigadier.arguments.StringArgumentType.getString;
 import static com.mojang.brigadier.arguments.StringArgumentType.string;
 import static com.zenith.Globals.MODULE;
@@ -23,6 +25,7 @@ public class MetricsModuleCommand extends Command {
                 .description("Metrics module commands")
                 .usageLines("Metrics module commands",
                         "[on/off] - Toggle metrics publishing.",
+                        "port <port> - Set the metrics server port. 0 to assign a random port.",
                         "serviceDiscovery enabled [on/off] - Enable or disable service discovery for the metrics server.",
                         "serviceDiscovery accountName <accountName> - Set the account name service discovery metrics label.",
                         "serviceDiscovery host <host> - Service discovery host.",
@@ -47,6 +50,31 @@ public class MetricsModuleCommand extends Command {
                                     // other properties like fields can be left unset without issues
                                     .title("Metrics module " + toggleStrCaps(MetricsPlugin.PLUGIN_CONFIG.enabled));
                         }))
+                .then(literal("port").executes(c -> {
+                            c.getSource().getEmbed()
+                                    .title("Current metrics server port: " +
+                                            MetricsPlugin.PLUGIN_CONFIG.port);
+                        })
+                        .then(argument("port", integer()).executes(c -> {
+                            int oldPort = MetricsPlugin.PLUGIN_CONFIG.port;
+                            int port = getInteger(c, "port");
+                            if (port < 0 || port > 65535) {
+                                c.getSource().getEmbed()
+                                        .title("Invalid port: " + port);
+                                return ERROR;
+                            }
+                            MetricsPlugin.PLUGIN_CONFIG.port = port;
+                            if (port != oldPort) {
+                                MODULE.get(MetricsModule.class).restartMetricsServer();
+                                c.getSource().getEmbed()
+                                        .title("Metrics server port changed to: " + port +
+                                                ", restarting metrics server.");
+                            } else {
+                                c.getSource().getEmbed()
+                                        .title("Metrics server port set to: " + port);
+                            }
+                            return OK;
+                        })))
                 .then(literal("serviceDiscovery")
                         .executes(c -> {
                             c.getSource().getEmbed()
@@ -105,11 +133,12 @@ public class MetricsModuleCommand extends Command {
                                     } catch (NumberFormatException e) {
                                         c.getSource().getEmbed()
                                                 .title("Invalid port: " + portStr);
-                                        return;
+                                        return ERROR;
                                     }
                                     MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port = port;
                                     c.getSource().getEmbed()
                                             .title("Service discovery port set to: " + port);
+                                    return OK;
                                 }))
                         )
                         .then(literal("target")
