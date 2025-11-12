@@ -2,7 +2,6 @@ package org.icetank.metric.metrics;
 
 
 import com.zenith.Proxy;
-import com.zenith.cache.data.entity.EntityPlayer;
 import io.prometheus.metrics.core.metrics.GaugeWithCallback;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.icetank.metric.Registerable;

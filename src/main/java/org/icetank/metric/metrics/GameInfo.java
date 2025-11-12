@@ -18,9 +18,7 @@ public class GameInfo implements Registerable {
         GaugeWithCallback.builder()
                 .name("zenith_server_tps")
                 .help("Current region TPS")
-                .callback(callback -> {
-                    callback.call(TPS.getTPSValue());
-                })
+                .callback(callback -> callback.call(TPS.getTPSValue()))
                 .register(registry);
         GaugeWithCallback.builder()
                 .name("zenith_server_player_count")
