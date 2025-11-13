@@ -1,15 +1,17 @@
 package org.icetank.metric.metrics;
 
 
-import com.zenith.cache.data.entity.Entity;
+import com.zenith.mc.entity.EntityRegistry;
 import io.prometheus.metrics.core.metrics.GaugeWithCallback;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.icetank.metric.Registerable;
-import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 
 import java.util.Map;
 
 import static com.zenith.Globals.CACHE;
+import static com.zenith.Globals.ENTITY_DATA;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.reducing;
 
 /*
  * @author IceTank
@@ -23,10 +25,14 @@ public class EntitiesInfo implements Registerable {
                 .help("Number of items dropped in the world")
                 .labelNames("type")
                 .callback(callback -> {
-                    Map<Integer, Entity> entities = CACHE.getEntityCache().getEntities();
-                    callback.call(entities.size(), "all");
-                    callback.call(entities.values().stream().filter(e -> e.getEntityType() == EntityType.PLAYER).count(), "players");
-                    callback.call(entities.values().stream().filter(e -> e.getEntityType() == EntityType.ITEM).count(), "items");
+                    Map<String, Integer> entityCountMap = CACHE.getEntityCache().getEntities().values().stream()
+                            .collect(groupingBy(e -> {
+                                var entityData = ENTITY_DATA.getEntityData(e.getEntityType());
+                                return entityData != null ? entityData.name() : "unknown";
+                            }, reducing(0, e -> 1, Integer::sum)));
+                    for (Map.Entry<String, Integer> entry : entityCountMap.entrySet()) {
+                        callback.call(entry.getValue(), entry.getKey());
+                    }
                 })
                 .register(registry);
     }
