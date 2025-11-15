@@ -1,11 +1,14 @@
 package org.icetank.metric.metrics;
 
 
-import com.zenith.mc.entity.EntityRegistry;
+import io.prometheus.metrics.core.metrics.Counter;
 import io.prometheus.metrics.core.metrics.GaugeWithCallback;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 import org.icetank.metric.Registerable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.zenith.Globals.CACHE;
@@ -18,10 +21,12 @@ import static java.util.stream.Collectors.reducing;
  * @since 08.11.2025
  */
 public class EntitiesInfo implements Registerable {
+    private static Counter entityCounter;
+    private static final List<Integer> uniqueEntityIds = new ArrayList<>();
     @Override
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
-                .name("zenith_total_entities")
+                .name("zenith_entities_current")
                 .help("Number of items dropped in the world")
                 .labelNames("type")
                 .callback(callback -> {
@@ -35,5 +40,25 @@ public class EntitiesInfo implements Registerable {
                     }
                 })
                 .register(registry);
+        entityCounter = Counter.builder()
+                .name("zenith_entities_total")
+                .help("Total number of entities created in the world")
+                .labelNames("type")
+                .register(registry);
+    }
+
+    public static void incrementEntityCounter(EntityType entityType, int entityId) {
+        if (uniqueEntityIds.contains(entityId)) {
+            return;
+        }
+        uniqueEntityIds.add(entityId);
+        while (uniqueEntityIds.size() > 1000) {
+            uniqueEntityIds.removeFirst();
+        }
+        if (entityCounter == null) {
+            return;
+        }
+
+        entityCounter.labelValues(ENTITY_DATA.getEntityData(entityType).name()).inc();
     }
 }

@@ -13,8 +13,10 @@ import org.geysermc.mcprotocollib.protocol.data.ProtocolState;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
 import org.icetank.api.ServiceAnnouncer;
 import org.icetank.metric.Metrics;
+import org.icetank.metric.metrics.EntitiesInfo;
 import org.icetank.metric.metrics.ItemDrops;
 import org.jspecify.annotations.Nullable;
 
@@ -50,10 +52,11 @@ public class MetricsModule extends Module {
     @Override
     public @Nullable PacketHandlerCodec registerClientPacketHandlerCodec() {
         return PacketHandlerCodec.clientBuilder()
-                .setPriority(5) // Does not really matter when we run as we only listen for entity creation events.
-                                .setId("metrics_packet_listener")
+                .setPriority(-5) // Does not really matter when we run as we only listen for entity creation events.
+                .setId("metrics_packet_listener")
                 .state(ProtocolState.GAME, PacketHandlerStateCodec.clientBuilder()
                         .inbound(ClientboundSetEntityDataPacket.class, new ClientboundEntityMetadataPacketHandler())
+                        .inbound(ClientboundAddEntityPacket.class, new ClientboundAddEntityPacketHandler())
                         .build())
                 .build();
     }
@@ -146,7 +149,7 @@ public class MetricsModule extends Module {
          * We check if this metadata packet belongs to an item entity, and if so we extract the itemStack from it and
          * it as a created item.
          *
-         * @param packet The packet
+         * @param packet  The packet
          * @param session The session
          * @return true
          */
@@ -166,6 +169,14 @@ public class MetricsModule extends Module {
                     }
                 }
             }
+            return true;
+        }
+    }
+
+    private static class ClientboundAddEntityPacketHandler implements ClientEventLoopPacketHandler<ClientboundAddEntityPacket, ClientSession> {
+        @Override
+        public boolean applyAsync(ClientboundAddEntityPacket packet, ClientSession session) {
+            EntitiesInfo.incrementEntityCounter(packet.getType(), packet.getEntityId());
             return true;
         }
     }

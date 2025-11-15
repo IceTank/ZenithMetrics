@@ -2,7 +2,7 @@ package org.icetank.metric.metrics;
 
 import com.zenith.mc.item.ItemData;
 import com.zenith.mc.item.ItemRegistry;
-import io.prometheus.metrics.core.metrics.Gauge;
+import io.prometheus.metrics.core.metrics.Counter;
 import io.prometheus.metrics.core.metrics.GaugeWithCallback;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.MetadataTypes;
@@ -18,16 +18,17 @@ import java.util.Map;
 import static com.zenith.Globals.CACHE;
 
 public class ItemDrops implements Registerable {
-    public static Gauge itemCounter;
+    public static Counter itemCounter;
     private static final List<Integer> uniqueItemIds = new ArrayList<>();
     @Override
     public void register(PrometheusRegistry registry) {
-        itemCounter = Gauge.builder()
-                .name("zenith_total_items_dropped")
+        itemCounter = Counter.builder()
+                .name("zenith_items_total")
+                .help("Total number of items created in the world")
                 .labelNames("item")
                 .register(registry);
         GaugeWithCallback.builder()
-                .name("zenith_total_items")
+                .name("zenith_items_current")
                 .labelNames("item")
                 .callback(callback -> {
                     Map<String, Integer> itemAmountMap = new HashMap<>();
