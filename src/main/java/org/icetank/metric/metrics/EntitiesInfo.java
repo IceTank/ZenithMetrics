@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.reducing;
 public class EntitiesInfo implements Registerable {
     private static Counter entityCounter;
     private static final List<Integer> uniqueEntityIds = new ArrayList<>();
+    private static int highestEntityId = 0;
     @Override
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
@@ -45,6 +46,11 @@ public class EntitiesInfo implements Registerable {
                 .help("Total number of entities created in the world")
                 .labelNames("type")
                 .register(registry);
+        GaugeWithCallback.builder()
+                .name("zenith_entities_highest_id")
+                .help("Highest entity ID encountered")
+                .callback(callback -> callback.call(highestEntityId))
+                .register(registry);
     }
 
     public static void incrementEntityCounter(EntityType entityType, int entityId) {
@@ -60,5 +66,15 @@ public class EntitiesInfo implements Registerable {
         }
 
         entityCounter.labelValues(ENTITY_DATA.getEntityData(entityType).name()).inc();
+    }
+
+    public static void recordHighestEntityId(int entityId) {
+        if (entityId > highestEntityId) {
+            highestEntityId = entityId;
+            return;
+        }
+        if (entityId < 0 && highestEntityId > 0) {
+            highestEntityId = entityId;
+        }
     }
 }

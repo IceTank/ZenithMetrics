@@ -177,6 +177,7 @@ public class MetricsModule extends Module {
         @Override
         public boolean applyAsync(ClientboundAddEntityPacket packet, ClientSession session) {
             EntitiesInfo.incrementEntityCounter(packet.getType(), packet.getEntityId());
+            EntitiesInfo.recordHighestEntityId(packet.getEntityId());
             return true;
         }
     }
