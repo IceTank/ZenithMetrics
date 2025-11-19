@@ -5,6 +5,7 @@ import com.zenith.command.api.Command;
 import com.zenith.command.api.CommandCategory;
 import com.zenith.command.api.CommandContext;
 import com.zenith.command.api.CommandUsage;
+import com.zenith.discord.Embed;
 import org.icetank.MetricsPlugin;
 import org.icetank.module.MetricsModule;
 
@@ -25,22 +26,18 @@ public class MetricsModuleCommand extends Command {
                 .description("Metrics module commands")
                 .usageLines("Metrics module commands",
                         "[on/off] - Toggle metrics publishing.",
-                        "port <port> - Set the metrics server port. 0 to assign a random port.",
-                        "serviceDiscovery enabled [on/off] - Enable or disable service discovery for the metrics server.",
-                        "serviceDiscovery accountName <accountName> - Set the account name service discovery metrics label.",
-                        "serviceDiscovery host <host> - Service discovery host.",
-                        "serviceDiscovery port <port> - Service discovery port.",
-                        "serviceDiscovery target <target> - Set the target host that Prometheus should scrape.")
+                        "port [port] - Set or views the metrics server port. 0 to assign a random port.",
+                        "serviceDiscovery [on/off] - Enable or disable service discovery for the metrics server.",
+                        "serviceDiscovery accountName [accountName] - Set the account name service discovery metrics label.",
+                        "serviceDiscovery host [host] - Service discovery host.",
+                        "serviceDiscovery port [port] - Service discovery port.",
+                        "serviceDiscovery target [target] - Set the target host that Prometheus should scrape.")
                 .build();
     }
 
     @Override
     public LiteralArgumentBuilder<CommandContext> register() {
         return command("metrics")
-                .executes(c -> {
-                    c.getSource().getEmbed()
-                            .title("Metrics module is " + toggleStrCaps(MetricsPlugin.PLUGIN_CONFIG.enabled));
-                })
                 .then(argument("toggle", toggle())
                         .executes(c -> {
                             MetricsPlugin.PLUGIN_CONFIG.enabled = getToggle(c, "toggle");
@@ -76,25 +73,13 @@ public class MetricsModuleCommand extends Command {
                             return OK;
                         })))
                 .then(literal("serviceDiscovery")
-                        .executes(c -> {
-                            c.getSource().getEmbed()
-                                    .title("Service discovery configuration")
-                                    .addField("Account Name", MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.accountName)
-                                    .addField("Host", MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.host)
-                                    .addField("Port", String.valueOf(MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port))
-                                    .addField("Target Host", MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.targetHost);
-                        })
-                        .then(literal("enabled").executes(c -> {
+                        .then(argument("enabled", toggle())
+                                .executes(c -> {
+                                    MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.enabled = getToggle(c, "enabled");
                                     c.getSource().getEmbed()
                                             .title("Service discovery is " +
                                                     toggleStrCaps(MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.enabled));
-                                })
-                                .then(argument("toggle", toggle()).executes(c -> {
-                                    boolean enabled = getToggle(c, "toggle");
-                                    MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.enabled = enabled;
-                                    c.getSource().getEmbed()
-                                            .title("Service discovery " + toggleStrCaps(enabled));
-                                })))
+                                }))
                         .then(literal("accountName")
                                 .executes(c -> {
                                     c.getSource().getEmbed()
@@ -155,5 +140,18 @@ public class MetricsModuleCommand extends Command {
                                 }))
                         )
                 );
+    }
+
+    @Override
+    public void defaultEmbed(final Embed builder) {
+        builder
+                .primaryColor()
+                .addField("Enabled", String.valueOf(MetricsPlugin.PLUGIN_CONFIG.enabled))
+                .addField("Metrics Port", String.valueOf(MetricsPlugin.PLUGIN_CONFIG.port))
+                .addField("Service Discovery Enabled", String.valueOf(MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.enabled))
+                .addField("Service Discovery Account Name", MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.accountName)
+                .addField("Service Discovery Host:Port", MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.host + ":" +
+                        MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.port)
+                .addField("Service Discovery Target Host", MetricsPlugin.PLUGIN_CONFIG.serviceDiscovery.targetHost);
     }
 }
