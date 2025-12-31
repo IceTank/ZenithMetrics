@@ -26,8 +26,8 @@ public class EntitiesInfo implements Registerable {
     private static final List<Integer> uniqueEntityIds = new ArrayList<>();
     private static int highestEntityIdGame = 0;
     private static int highestEntityIdQueue = 0;
-    private static String CONTEXT_GAME = "game";
-    private static String CONTEXT_QUEUE = "queue";
+    private static final String CONTEXT_GAME = "game";
+    private static final String CONTEXT_QUEUE = "queue";
     @Override
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
