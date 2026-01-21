@@ -7,16 +7,20 @@ import com.zenith.network.client.ClientSession;
 import com.zenith.network.codec.ClientEventLoopPacketHandler;
 import com.zenith.network.codec.PacketHandlerCodec;
 import com.zenith.network.codec.PacketHandlerStateCodec;
+import com.zenith.util.ComponentSerializer;
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 import io.prometheus.metrics.instrumentation.jvm.JvmMetrics;
 import org.geysermc.mcprotocollib.protocol.data.ProtocolState;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundTabListPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundSetTimePacket;
 import org.icetank.api.ServiceAnnouncer;
 import org.icetank.metric.Metrics;
 import org.icetank.metric.metrics.EntitiesInfo;
+import org.icetank.metric.metrics.GameInfo;
 import org.icetank.metric.metrics.ItemDrops;
 import org.jspecify.annotations.Nullable;
 
@@ -26,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static com.zenith.Globals.CACHE;
 import static org.icetank.MetricsPlugin.LOG;
@@ -35,6 +40,7 @@ public class MetricsModule extends Module {
     HTTPServer metricsServer = null;
     private ScheduledExecutorService scheduler = null;
     private final long SERVICE_HEARTBEAT_INTERVAL = 10;
+    private final static Pattern regexFooterPattern = Pattern.compile("(\\d+(?:\\.\\d+)?) tps — (\\d+) players online — (\\d+) ping");
 
     @Override
     public boolean enabledSetting() {
@@ -57,6 +63,7 @@ public class MetricsModule extends Module {
                 .state(ProtocolState.GAME, PacketHandlerStateCodec.clientBuilder()
                         .inbound(ClientboundSetEntityDataPacket.class, new ClientboundEntityMetadataPacketHandler())
                         .inbound(ClientboundAddEntityPacket.class, new ClientboundAddEntityPacketHandler())
+                        .inbound(ClientboundTabListPacket.class, new TabListPacketHandler())
                         .build())
                 .build();
     }
@@ -178,6 +185,29 @@ public class MetricsModule extends Module {
         public boolean applyAsync(ClientboundAddEntityPacket packet, ClientSession session) {
             EntitiesInfo.incrementEntityCounter(packet.getType(), packet.getEntityId());
             EntitiesInfo.recordHighestEntityId(packet.getEntityId());
+            return true;
+        }
+    }
+
+    private static class TabListPacketHandler implements ClientEventLoopPacketHandler<ClientboundTabListPacket, ClientSession> {
+        @Override
+        public boolean applyAsync(ClientboundTabListPacket packet, ClientSession session) {
+            String footer = ComponentSerializer.serializePlain(packet.getFooter());
+            footer = footer.replaceAll("§.", ""); // Remove color codes
+            try {
+                // Example footer: 19.51 tps — 679 players online — 127 ping
+                var match = regexFooterPattern.matcher(footer);
+                if (match.find() && match.groupCount() == 3) {
+                    double tps = Double.parseDouble(match.group(1));
+                    int playerCount = Integer.parseInt(match.group(2));
+                    int ping = Integer.parseInt(match.group(3));
+                    GameInfo.reportedTPS.set(tps);
+                    GameInfo.reportedPlayerCount.set(playerCount);
+                    GameInfo.reportedPing.set(ping);
+                }
+            } catch (Exception e) {
+                LOG.warn("Failed to parse tab list footer for metrics: {}", footer);
+            }
             return true;
         }
     }

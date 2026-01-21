@@ -9,12 +9,12 @@ import org.icetank.command.MetricsModuleCommand;
 import org.icetank.module.MetricsModule;
 
 @Plugin(
-    id = "metrics-plugin",
+    id = BuildConstants.PLUGIN_ID,
     version = BuildConstants.VERSION,
     description = "ZenithProxy Prometheus Metrics publishing plugin",
     url = "https://github.com/IceTank/ZenithMetrics",
     authors = {"IceTank"},
-    mcVersions = {"1.21.4"} // to indicate any MC version: @Plugin(mcVersions = "*")
+    mcVersions = {BuildConstants.MC_VERSION} // to indicate any MC version: @Plugin(mcVersions = "*")
                             // if you touch packet classes, you almost certainly need to pin to a single mc version
 )
 public class MetricsPlugin implements ZenithProxyPlugin {
@@ -28,7 +28,7 @@ public class MetricsPlugin implements ZenithProxyPlugin {
         LOG = pluginAPI.getLogger();
         LOG.info("Metrics Plugin loading...");
         // initialize any configurations before modules or commands might need to read them
-        PLUGIN_CONFIG = pluginAPI.registerConfig("metrics-plugin", MetricsConfig.class);
+        PLUGIN_CONFIG = pluginAPI.registerConfig(BuildConstants.PLUGIN_ID, MetricsConfig.class);
         pluginAPI.registerModule(new MetricsModule());
         pluginAPI.registerCommand(new MetricsModuleCommand());
         LOG.info("Metrics Plugin loaded.");
