@@ -1,6 +1,7 @@
 package org.icetank.metric.metrics;
 
 
+import com.zenith.Proxy;
 import io.prometheus.metrics.core.metrics.Gauge;
 import io.prometheus.metrics.core.metrics.GaugeWithCallback;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
@@ -21,8 +22,13 @@ public class GameInfo implements Registerable {
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
                 .name("zenith_server_tps")
-                .help("Current region TPS")
+                .help("Current calculated region TPS")
                 .callback(callback -> callback.call(TPS.getTPSValue()))
+                .register(registry);
+        GaugeWithCallback.builder()
+                .name("zenith_server_ping")
+                .help("Current calculated average server ping")
+                .callback(callback -> callback.call(Proxy.getInstance().getClient().getPing()))
                 .register(registry);
         GaugeWithCallback.builder()
                 .name("zenith_server_player_count")
