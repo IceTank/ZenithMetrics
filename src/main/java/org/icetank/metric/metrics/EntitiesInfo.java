@@ -77,23 +77,12 @@ public class EntitiesInfo implements Registerable {
         entityCounter.labelValues(ENTITY_DATA.getEntityData(entityType).name()).inc();
     }
 
-    public static void recordHighestEntityId(int entityId) {
+    public static void setLastEntityId(int entityId) {
         if (Proxy.getInstance().isInQueue()) {
-            if (entityId > highestEntityIdQueue) {
-                highestEntityIdQueue = entityId;
-                return;
-            }
-            if (entityId < 0 && highestEntityIdQueue > 0) {
-                highestEntityIdQueue = entityId;
-            }
+            highestEntityIdQueue = entityId;
         } else {
-            if (entityId > highestEntityIdGame) {
-                highestEntityIdGame = entityId;
-                return;
-            }
-            if (entityId < 0 && highestEntityIdGame > 0) {
-                highestEntityIdGame = entityId;
-            }
+            highestEntityIdGame = entityId;
         }
     }
+
 }
