@@ -7,6 +7,9 @@ import io.prometheus.metrics.core.metrics.GaugeWithCallback;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.icetank.metric.Registerable;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import static com.zenith.Globals.CACHE;
 import static com.zenith.Globals.TPS;
 
@@ -15,6 +18,8 @@ import static com.zenith.Globals.TPS;
  * @since 08.11.2025
  */
 public class GameInfo implements Registerable {
+    private static final Instant START_TIME  = Instant.now();
+
     public static Gauge reportedTPS;
     public static Gauge reportedPing;
     public static Gauge reportedPlayerCount;
@@ -23,7 +28,7 @@ public class GameInfo implements Registerable {
         GaugeWithCallback.builder()
                 .name("zenith_server_tps")
                 .help("Current calculated region TPS")
-                .callback(callback -> callback.call(TPS.getTPSValue()))
+                .callback(callback -> callback.call(Proxy.getInstance().isInQueue() ? 0 : TPS.getTPSValue()))
                 .register(registry);
         GaugeWithCallback.builder()
                 .name("zenith_server_ping")
@@ -47,5 +52,19 @@ public class GameInfo implements Registerable {
                 .name("zenith_server_reported_player_count")
                 .help("Server reported player count")
                 .register(registry);
+        GaugeWithCallback.builder()
+                .name("zenith_total_uptime")
+                .help("Total uptime of the proxy in seconds")
+                .callback(callback -> {
+                    Duration uptimeDuration = Duration.between(START_TIME, Instant.now());
+                    callback.call(uptimeDuration.getSeconds());
+                })
+                .register(registry);
+    }
+
+    public static void onDisconnect() {
+        reportedTPS.set(0);
+        reportedPing.set(0);
+        reportedPlayerCount.set(0);
     }
 }

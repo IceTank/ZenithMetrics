@@ -85,4 +85,8 @@ public class EntitiesInfo implements Registerable {
         }
     }
 
+    public static void onDisconnect() {
+        highestEntityIdGame = 0;
+        highestEntityIdQueue = 0;
+    }
 }

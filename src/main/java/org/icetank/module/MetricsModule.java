@@ -1,5 +1,7 @@
 package org.icetank.module;
 
+import com.github.rfresh2.EventConsumer;
+import com.zenith.event.client.ClientDisconnectEvent;
 import com.zenith.mc.item.ItemData;
 import com.zenith.mc.item.ItemRegistry;
 import com.zenith.module.api.Module;
@@ -16,7 +18,6 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundTabListPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundSetTimePacket;
 import org.icetank.api.ServiceAnnouncer;
 import org.icetank.metric.Metrics;
 import org.icetank.metric.metrics.EntitiesInfo;
@@ -25,6 +26,7 @@ import org.icetank.metric.metrics.ItemDrops;
 import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -45,6 +47,16 @@ public class MetricsModule extends Module {
     @Override
     public boolean enabledSetting() {
         return PLUGIN_CONFIG.enabled;
+    }
+
+    @Override
+    public List<EventConsumer<?>> registerEvents() {
+        return List.of(EventConsumer.of(ClientDisconnectEvent.class, this::onDisconnect));
+    }
+
+    private void onDisconnect(ClientDisconnectEvent event) {
+        GameInfo.onDisconnect();
+        EntitiesInfo.onDisconnect();
     }
 
     @Override
