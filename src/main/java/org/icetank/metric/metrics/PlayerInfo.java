@@ -4,6 +4,7 @@ package org.icetank.metric.metrics;
 import com.zenith.Proxy;
 import com.zenith.mc.block.BlockPos;
 import io.prometheus.metrics.core.metrics.Counter;
+import io.prometheus.metrics.core.metrics.Gauge;
 import io.prometheus.metrics.core.metrics.GaugeWithCallback;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.icetank.metric.Registerable;
@@ -19,6 +20,9 @@ import static com.zenith.Globals.CACHE;
  */
 public class PlayerInfo implements Registerable {
     public static Counter distanceWalkedCounter;
+    public static GaugeWithCallback playerYLevelGauge;
+    private static final String CONTEXT_GAME = "game";
+    private static final String CONTEXT_QUEUE = "queue";
     @Override
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
@@ -67,6 +71,16 @@ public class PlayerInfo implements Registerable {
         distanceWalkedCounter = Counter.builder()
                 .name("zenith_player_distance_walked_total")
                 .help("Total distance walked by the player in blocks")
+                .register(registry);
+        playerYLevelGauge = GaugeWithCallback.builder()
+                .name("zenith_player_y_level")
+                .help("Player Y level over time")
+                .labelNames("context")
+                .callback(callback -> {
+                    String context = Proxy.getInstance().isInQueue() ? CONTEXT_QUEUE : CONTEXT_GAME;
+                    double yLevel = BOT.getY();
+                    callback.call(yLevel, context);
+                })
                 .register(registry);
     }
 }
