@@ -2,12 +2,15 @@ package org.icetank.metric.metrics;
 
 
 import com.zenith.Proxy;
+import com.zenith.mc.block.BlockPos;
+import io.prometheus.metrics.core.metrics.Counter;
 import io.prometheus.metrics.core.metrics.GaugeWithCallback;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.icetank.metric.Registerable;
 
 import java.util.Objects;
 
+import static com.zenith.Globals.BOT;
 import static com.zenith.Globals.CACHE;
 
 /*
@@ -15,6 +18,7 @@ import static com.zenith.Globals.CACHE;
  * @since 08.11.2025
  */
 public class PlayerInfo implements Registerable {
+    public static Counter distanceWalkedCounter;
     @Override
     public void register(PrometheusRegistry registry) {
         GaugeWithCallback.builder()
@@ -59,6 +63,10 @@ public class PlayerInfo implements Registerable {
                 .name("zenith_player_total_experience")
                 .help("Player total experience over time")
                 .callback(callback -> callback.call(CACHE.getPlayerCache().getThePlayer().getTotalExperience()))
+                .register(registry);
+        distanceWalkedCounter = Counter.builder()
+                .name("zenith_player_distance_walked_total")
+                .help("Total distance walked by the player in blocks")
                 .register(registry);
     }
 }

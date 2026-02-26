@@ -1,7 +1,9 @@
 package org.icetank.module;
 
 import com.github.rfresh2.EventConsumer;
+import com.zenith.Proxy;
 import com.zenith.event.client.ClientDisconnectEvent;
+import com.zenith.event.client.ClientTickEvent;
 import com.zenith.mc.item.ItemData;
 import com.zenith.mc.item.ItemRegistry;
 import com.zenith.module.api.Module;
@@ -10,19 +12,24 @@ import com.zenith.network.codec.ClientEventLoopPacketHandler;
 import com.zenith.network.codec.PacketHandlerCodec;
 import com.zenith.network.codec.PacketHandlerStateCodec;
 import com.zenith.util.ComponentSerializer;
+import com.zenith.util.timer.Timer;
+import com.zenith.util.timer.Timers;
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 import io.prometheus.metrics.instrumentation.jvm.JvmMetrics;
+import org.cloudburstmc.math.vector.Vector3d;
 import org.geysermc.mcprotocollib.protocol.data.ProtocolState;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundTabListPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
 import org.icetank.api.ServiceAnnouncer;
 import org.icetank.metric.Metrics;
 import org.icetank.metric.metrics.EntitiesInfo;
 import org.icetank.metric.metrics.GameInfo;
 import org.icetank.metric.metrics.ItemDrops;
+import org.icetank.metric.metrics.PlayerInfo;
 import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
@@ -34,6 +41,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import static com.zenith.Globals.BOT;
 import static com.zenith.Globals.CACHE;
 import static org.icetank.MetricsPlugin.LOG;
 import static org.icetank.MetricsPlugin.PLUGIN_CONFIG;
@@ -43,6 +51,10 @@ public class MetricsModule extends Module {
     private ScheduledExecutorService scheduler = null;
     private final long SERVICE_HEARTBEAT_INTERVAL = 10;
     private final static Pattern regexFooterPattern = Pattern.compile("(\\d+(?:\\.\\d+)?) tps — (\\d+) players online — (\\d+) ping");
+    private double lastPlayerX = 0;
+    private double lastPlayerY = 0;
+    private double lastPlayerZ = 0;
+    private final Timer distanceWalkedTimer = Timers.tickTimer();
 
     @Override
     public boolean enabledSetting() {
@@ -51,12 +63,31 @@ public class MetricsModule extends Module {
 
     @Override
     public List<EventConsumer<?>> registerEvents() {
-        return List.of(EventConsumer.of(ClientDisconnectEvent.class, this::onDisconnect));
+        return List.of(
+                EventConsumer.of(ClientDisconnectEvent.class, this::onDisconnect),
+                EventConsumer.of(ClientTickEvent.class, this::onTick)
+        );
     }
 
     private void onDisconnect(ClientDisconnectEvent event) {
         GameInfo.onDisconnect();
         EntitiesInfo.onDisconnect();
+    }
+
+    private void onTick(ClientTickEvent event) {
+        if (!Proxy.getInstance().isOn2b2t() && Proxy.getInstance().isInQueue()) {
+            return;
+        }
+        if (distanceWalkedTimer.tick(20, true)) {
+            var playerX = BOT.getX();
+            var playerY = BOT.getY();
+            var playerZ = BOT.getZ();
+            double distance = Vector3d.from(playerX, playerY, playerZ).distance(Vector3d.from(lastPlayerX, lastPlayerY, lastPlayerZ));
+            PlayerInfo.distanceWalkedCounter.inc(distance);
+            lastPlayerX = playerX;
+            lastPlayerY = playerY;
+            lastPlayerZ = playerZ;
+        }
     }
 
     @Override
@@ -76,6 +107,12 @@ public class MetricsModule extends Module {
                         .inbound(ClientboundSetEntityDataPacket.class, new ClientboundEntityMetadataPacketHandler())
                         .inbound(ClientboundAddEntityPacket.class, new ClientboundAddEntityPacketHandler())
                         .inbound(ClientboundTabListPacket.class, new TabListPacketHandler())
+                        .inbound(ClientboundPlayerPositionPacket.class, (packet, session) -> {
+                            lastPlayerX = packet.getX();
+                            lastPlayerY = packet.getY();
+                            lastPlayerZ = packet.getZ();
+                            return packet;
+                        })
                         .build())
                 .build();
     }
