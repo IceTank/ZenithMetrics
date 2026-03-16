@@ -1,4 +1,4 @@
-# ZenithProxy Example Plugin
+# ZenithProxy Promethues Metrics Plugin
 
 [ZenithProxy](https://github.com/rfresh2/ZenithProxy) is a Minecraft proxy and bot.
 
