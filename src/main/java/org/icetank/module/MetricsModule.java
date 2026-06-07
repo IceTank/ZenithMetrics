@@ -107,15 +107,10 @@ public class MetricsModule extends Module {
                 .setPriority(-5) // Does not really matter when we run as we only listen for entity creation events.
                 .setId("metrics_packet_listener")
                 .state(ProtocolState.GAME, PacketHandlerStateCodec.clientBuilder()
-                        .inbound(ClientboundSetEntityDataPacket.class, new ClientboundEntityMetadataPacketHandler())
-                        .inbound(ClientboundAddEntityPacket.class, new ClientboundAddEntityPacketHandler())
-                        .inbound(ClientboundTabListPacket.class, new TabListPacketHandler())
-                        .inbound(ClientboundPlayerPositionPacket.class, (packet, session) -> {
-                            lastPlayerX = packet.getX();
-                            lastPlayerY = packet.getY();
-                            lastPlayerZ = packet.getZ();
-                            return packet;
-                        })
+                        .inbound(ClientboundSetEntityDataPacket.class, this::onEntityMetadataPacket)
+                        .inbound(ClientboundAddEntityPacket.class, this::onAddEntityPacket)
+                        .inbound(ClientboundTabListPacket.class, this::onTabListPacket)
+                        .inbound(ClientboundPlayerPositionPacket.class, this::onPlayerPositionPacket)
                         .inbound(ClientboundLevelChunkWithLightPacket.class, this::onLevelChunkPacket)
                         .build())
                 .build();
@@ -202,71 +197,61 @@ public class MetricsModule extends Module {
         startMetricsServer();
     }
 
-    private ClientboundLevelChunkWithLightPacket onLevelChunkPacket(ClientboundLevelChunkWithLightPacket packet, ClientSession session) {
-        chunkLoadsAll++;
-        return packet;
-    }
-
-    private static class ClientboundEntityMetadataPacketHandler implements ClientEventLoopPacketHandler<ClientboundSetEntityDataPacket, ClientSession> {
-        /**
-         * When minecraft spawns an item it usually spawns an item entity first and then assigns the itemStack to it
-         * with a EntityData packet. I think. Don't quote me on that.
-         * We check if this metadata packet belongs to an item entity, and if so we extract the itemStack from it and
-         * it as a created item.
-         *
-         * @param packet  The packet
-         * @param session The session
-         * @return true
-         */
-        @Override
-        public boolean applyAsync(ClientboundSetEntityDataPacket packet, ClientSession session) {
-            var entity = CACHE.getEntityCache().get(packet.getEntityId());
-            if (entity != null && entity.getEntityType() == EntityType.ITEM) {
-                for (var meta : packet.getMetadata()) {
-                    if (meta.getId() == 8) {
-                        var metadataValue = meta.getValue();
-                        if (metadataValue instanceof ItemStack valueCast) {
-                            ItemData itemData = ItemRegistry.REGISTRY.get(valueCast.getId());
-                            if (itemData != null) {
-                                ItemDrops.addItemCreated(packet.getEntityId(), itemData.name(), valueCast.getAmount());
-                            }
+    private ClientboundSetEntityDataPacket onEntityMetadataPacket(ClientboundSetEntityDataPacket packet, ClientSession session) {
+        // When minecraft spawns an item it usually spawns an item entity first and then assigns the itemStack to it
+        // using a EntityData packet. I think. Don't quote me on that.
+        // We check if this metadata packet belongs to an item entity, and if so we extract the itemStack from it
+        var entity = CACHE.getEntityCache().get(packet.getEntityId());
+        if (entity != null && entity.getEntityType() == EntityType.ITEM) {
+            for (var meta : packet.getMetadata()) {
+                if (meta.getId() == 8) {
+                    var metadataValue = meta.getValue();
+                    if (metadataValue instanceof ItemStack valueCast) {
+                        ItemData itemData = ItemRegistry.REGISTRY.get(valueCast.getId());
+                        if (itemData != null) {
+                            ItemDrops.addItemCreated(packet.getEntityId(), itemData.name(), valueCast.getAmount());
                         }
                     }
                 }
             }
-            return true;
         }
+        return packet;
     }
 
-    private static class ClientboundAddEntityPacketHandler implements ClientEventLoopPacketHandler<ClientboundAddEntityPacket, ClientSession> {
-        @Override
-        public boolean applyAsync(ClientboundAddEntityPacket packet, ClientSession session) {
-            EntitiesInfo.incrementEntityCounter(packet.getType(), packet.getEntityId());
-            EntitiesInfo.setLastEntityId(packet.getEntityId());
-            return true;
-        }
-    }
-
-    private static class TabListPacketHandler implements ClientEventLoopPacketHandler<ClientboundTabListPacket, ClientSession> {
-        @Override
-        public boolean applyAsync(ClientboundTabListPacket packet, ClientSession session) {
-            String footer = ComponentSerializer.serializePlain(packet.getFooter());
-            footer = footer.replaceAll("§.", ""); // Remove color codes
-            try {
-                // Example footer: 19.51 tps — 679 players online — 127 ping
-                var match = regexFooterPattern.matcher(footer);
-                if (match.find() && match.groupCount() == 3) {
-                    double tps = Double.parseDouble(match.group(1));
-                    int playerCount = Integer.parseInt(match.group(2));
-                    int ping = Integer.parseInt(match.group(3));
-                    GameInfo.reportedTPS.set(tps);
-                    GameInfo.reportedPlayerCount.set(playerCount);
-                    GameInfo.reportedPing.set(ping);
-                }
-            } catch (Exception e) {
-                LOG.warn("Failed to parse tab list footer for metrics: {}", footer);
+    private ClientboundTabListPacket onTabListPacket(ClientboundTabListPacket packet, ClientSession session) {String footer = ComponentSerializer.serializePlain(packet.getFooter());
+        footer = footer.replaceAll("§.", ""); // Remove color codes
+        try {
+            // Example footer: 19.51 tps — 679 players online — 127 ping
+            var match = regexFooterPattern.matcher(footer);
+            if (match.find() && match.groupCount() == 3) {
+                double tps = Double.parseDouble(match.group(1));
+                int playerCount = Integer.parseInt(match.group(2));
+                int ping = Integer.parseInt(match.group(3));
+                GameInfo.reportedTPS.set(tps);
+                GameInfo.reportedPlayerCount.set(playerCount);
+                GameInfo.reportedPing.set(ping);
             }
-            return true;
+        } catch (Exception e) {
+            LOG.warn("Failed to parse tab list footer for metrics: {}", footer);
         }
+        return packet;
+    }
+
+    private ClientboundPlayerPositionPacket onPlayerPositionPacket(ClientboundPlayerPositionPacket packet, ClientSession session) {
+        lastPlayerX = packet.getX();
+        lastPlayerY = packet.getY();
+        lastPlayerZ = packet.getZ();
+        return packet;
+    }
+
+    private ClientboundAddEntityPacket onAddEntityPacket(ClientboundAddEntityPacket packet, ClientSession session) {
+        EntitiesInfo.incrementEntityCounter(packet.getType(), packet.getEntityId());
+        EntitiesInfo.setLastEntityId(packet.getEntityId());
+        return packet;
+    }
+
+    private ClientboundLevelChunkWithLightPacket onLevelChunkPacket(ClientboundLevelChunkWithLightPacket packet, ClientSession session) {
+        chunkLoadsAll++;
+        return packet;
     }
 }
