@@ -2,6 +2,9 @@ package org.icetank.metric;
 
 
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
+import org.icetank.module.MetricsModule;
+
+import static com.zenith.Globals.MODULE;
 
 /*
  * @author IceTank
@@ -9,4 +12,7 @@ import io.prometheus.metrics.model.registry.PrometheusRegistry;
  */
 public interface Registerable {
     void register(PrometheusRegistry registry);
+    default MetricsModule getModule() {
+        return MODULE.get(MetricsModule.class);
+    }
 }

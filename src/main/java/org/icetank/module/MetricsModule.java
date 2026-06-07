@@ -24,6 +24,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.Clientbound
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetEntityDataPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundLevelChunkWithLightPacket;
 import org.icetank.api.ServiceAnnouncer;
 import org.icetank.metric.Metrics;
 import org.icetank.metric.metrics.EntitiesInfo;
@@ -55,6 +56,8 @@ public class MetricsModule extends Module {
     private double lastPlayerY = 0;
     private double lastPlayerZ = 0;
     private final Timer distanceWalkedTimer = Timers.tickTimer();
+
+    public long chunkLoadsAll = 0;
 
     @Override
     public boolean enabledSetting() {
@@ -113,6 +116,7 @@ public class MetricsModule extends Module {
                             lastPlayerZ = packet.getZ();
                             return packet;
                         })
+                        .inbound(ClientboundLevelChunkWithLightPacket.class, this::onLevelChunkPacket)
                         .build())
                 .build();
     }
@@ -196,6 +200,11 @@ public class MetricsModule extends Module {
     public void restartMetricsServer() {
         shutdown();
         startMetricsServer();
+    }
+
+    private ClientboundLevelChunkWithLightPacket onLevelChunkPacket(ClientboundLevelChunkWithLightPacket packet, ClientSession session) {
+        chunkLoadsAll++;
+        return packet;
     }
 
     private static class ClientboundEntityMetadataPacketHandler implements ClientEventLoopPacketHandler<ClientboundSetEntityDataPacket, ClientSession> {

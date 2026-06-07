@@ -29,6 +29,7 @@ public class Metrics {
             new EntitiesInfo().register(registry);
             new PlayerInfo().register(registry);
             new ItemDrops().register(registry);
+            new WorldInfo().register(registry);
         }
     }
 }
