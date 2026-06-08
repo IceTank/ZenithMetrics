@@ -34,9 +34,9 @@ dependencies {
     zenithProxy("com.zenith:ZenithProxy:$mc-SNAPSHOT")
     /** to include dependencies into your plugin jar **/
 //    shade("com.github.ben-manes.caffeine:caffeine:3.2.0")
-    shade("io.prometheus:prometheus-metrics-core:1.5.1")
-    shade("io.prometheus:prometheus-metrics-instrumentation-jvm:1.5.1")
-    shade("io.prometheus:prometheus-metrics-exporter-httpserver:1.5.1")
+    shade("io.prometheus:prometheus-metrics-core:1.7.0")
+    shade("io.prometheus:prometheus-metrics-instrumentation-jvm:1.7.0")
+    shade("io.prometheus:prometheus-metrics-exporter-httpserver:1.7.0")
 }
 
 tasks {
